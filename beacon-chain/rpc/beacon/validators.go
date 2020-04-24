@@ -853,6 +853,12 @@ func (bs *Server) GetValidatorPerformance(
 	}, nil
 }
 
+// GetGenesisValidatorsRoot gets the genesis validators root for use in differentiating chains.
+func (bs *Server) GetGenesisValidatorsRoot(ctx context.Context, _ *ptypes.Empty) ([]byte, error) {
+	genValRoot := bs.HeadFetcher.HeadGenesisValidatorRoot()
+	return genValRoot[:], nil
+}
+
 // Determines whether a validator has already exited.
 func validatorHasExited(validator *ethpb.Validator, currentEpoch uint64) bool {
 	farFutureEpoch := params.BeaconConfig().FarFutureEpoch

@@ -1,6 +1,7 @@
 package beacon
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"fmt"
@@ -23,6 +24,7 @@ import (
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/beacon-chain/state/stategen"
 	pbp2p "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
+	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/testutil"
@@ -1834,6 +1836,29 @@ func TestServer_GetValidatorParticipation_FromArchive_FinalizedEpoch(t *testing.
 		t.Fatal(err)
 	}
 	if !proto.Equal(want, res) {
+		t.Errorf("Wanted %v, received %v", want, res)
+	}
+}
+
+func TestServer_GetGenesisValidatorsRoot_OK(t *testing.T) {
+	ctx := context.Background()
+	headState := testutil.NewBeaconState()
+	want := bytesutil.ToBytes32([]byte("I am root"))
+	if err := headState.SetGenesisValidatorRoot(want[:]); err != nil {
+		t.Fatal(err)
+	}
+
+	bs := &Server{
+		HeadFetcher: &mock.ChainService{
+			State:          headState,
+			ValidatorsRoot: want,
+		},
+	}
+	res, err := bs.GetGenesisValidatorsRoot(ctx, &ptypes.Empty{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(want[:], res) {
 		t.Errorf("Wanted %v, received %v", want, res)
 	}
 }

@@ -157,7 +157,11 @@ func (ms *ChainService) HeadSlot() uint64 {
 // HeadRoot mocks HeadRoot method in chain service.
 func (ms *ChainService) HeadRoot(ctx context.Context) ([]byte, error) {
 	return ms.Root, nil
+}
 
+// HeadGenesisValidatorRoot mocks HeadGenesisValidatorRoot method in chain service.
+func (ms *ChainService) HeadGenesisValidatorRoot() [32]byte {
+	return ms.ValidatorsRoot
 }
 
 // HeadBlock mocks HeadBlock method in chain service.
@@ -244,9 +248,4 @@ func (ms *ChainService) ClearCachedStates() {}
 // HasInitSyncBlock mocks the same method in the chain service.
 func (ms *ChainService) HasInitSyncBlock(root [32]byte) bool {
 	return false
-}
-
-// HeadGenesisValidatorRoot mocks HeadGenesisValidatorRoot method in chain service.
-func (ms *ChainService) HeadGenesisValidatorRoot() [32]byte {
-	return [32]byte{}
 }
