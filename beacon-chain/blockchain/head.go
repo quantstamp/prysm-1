@@ -114,37 +114,15 @@ func (s *Service) saveHead(ctx context.Context, headRoot [32]byte) error {
 // This gets called to update canonical root mapping. It does not save head block
 // root in DB. With the inception of inital-sync-cache-state flag, it uses finalized
 // check point as anchors to resume sync therefore head is no longer needed to be saved on per slot basis.
-func (s *Service) saveHeadNoDB(ctx context.Context, b *ethpb.SignedBeaconBlock, r [32]byte) error {
+func (s *Service) saveHeadNoDB(ctx context.Context, h *stateTrie.BeaconState, b *ethpb.SignedBeaconBlock, r [32]byte) error {
 	if b == nil || b.Block == nil {
 		return errors.New("cannot save nil head block")
 	}
-
-	var headState *state.BeaconState
-	var err error
-	if featureconfig.Get().NewStateMgmt {
-		headState, err = s.stateGen.StateByRoot(ctx, r)
-		if err != nil {
-			return errors.Wrap(err, "could not retrieve head state in DB")
-		}
-	} else {
-		headState, err = s.beaconDB.State(ctx, r)
-		if err != nil {
-			return errors.Wrap(err, "could not retrieve head state in DB")
-		}
-		if headState == nil {
-			s.initSyncStateLock.RLock()
-			cachedHeadState, ok := s.initSyncState[r]
-			if ok {
-				headState = cachedHeadState
-			}
-			s.initSyncStateLock.RUnlock()
-		}
-	}
-	if headState == nil {
+	if h == nil {
 		return errors.New("nil head state")
 	}
 
-	s.setHeadInitialSync(r, stateTrie.CopySignedBeaconBlock(b), headState)
+	s.setHeadInitialSync(r, stateTrie.CopySignedBeaconBlock(b), h)
 
 	return nil
 }

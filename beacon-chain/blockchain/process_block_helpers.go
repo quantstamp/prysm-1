@@ -90,18 +90,19 @@ func (s *Service) verifyBlkPreState(ctx context.Context, b *ethpb.BeaconBlock) (
 		return preState, nil // No copy needed from newly hydrated state gen object.
 	}
 
+	if featureconfig.Get().CheckHeadState {
+		headRoot, err := s.HeadRoot(ctx)
+		if err != nil {
+			return nil, errors.Wrapf(err, "could not get head root")
+		}
+		if bytes.Equal(headRoot, b.ParentRoot) {
+			return s.head.state, nil
+		}
+	}
+
 	preState := s.initSyncState[bytesutil.ToBytes32(b.ParentRoot)]
 	var err error
 	if preState == nil {
-		if featureconfig.Get().CheckHeadState {
-			headRoot, err := s.HeadRoot(ctx)
-			if err != nil {
-				return nil, errors.Wrapf(err, "could not get head root")
-			}
-			if bytes.Equal(headRoot, b.ParentRoot) {
-				return s.HeadState(ctx)
-			}
-		}
 		preState, err = s.beaconDB.State(ctx, bytesutil.ToBytes32(b.ParentRoot))
 		if err != nil {
 			return nil, errors.Wrapf(err, "could not get pre state for slot %d", b.Slot)
@@ -300,6 +301,7 @@ func (s *Service) updateJustified(ctx context.Context, state *stateTrie.BeaconSt
 				log.Error(err)
 				return s.beaconDB.SaveJustifiedCheckpoint(ctx, cpt)
 			}
+			s.initSyncState[justifiedRoot] = justifiedState.Copy()
 		}
 		if err := s.beaconDB.SaveState(ctx, justifiedState, justifiedRoot); err != nil {
 			return errors.Wrap(err, "could not save justified state")

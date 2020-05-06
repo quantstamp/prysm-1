@@ -197,7 +197,8 @@ func (s *Service) ReceiveBlockNoVerify(ctx context.Context, block *ethpb.SignedB
 	blockCopy := stateTrie.CopySignedBeaconBlock(block)
 
 	// Apply state transition on the incoming newly received blockCopy without verifying its BLS contents.
-	if err := s.onBlockInitialSyncStateTransition(ctx, blockCopy); err != nil {
+	pState, err := s.onBlockInitialSyncStateTransition(ctx, blockCopy)
+	if err != nil {
 		err := errors.Wrap(err, "could not process block")
 		traceutil.AnnotateError(span, err)
 		return err
@@ -214,7 +215,7 @@ func (s *Service) ReceiveBlockNoVerify(ctx context.Context, block *ethpb.SignedB
 	}
 
 	if !bytes.Equal(root[:], cachedHeadRoot) {
-		if err := s.saveHeadNoDB(ctx, blockCopy, root); err != nil {
+		if err := s.saveHeadNoDB(ctx, pState, blockCopy, root); err != nil {
 			err := errors.Wrap(err, "could not save head")
 			traceutil.AnnotateError(span, err)
 			return err
